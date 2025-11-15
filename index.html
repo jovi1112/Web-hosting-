@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Bot Discord</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #5865F2;
+            --secondary: #404EED;
+            --dark: #2C2F33;
+            --darker: #23272A;
+            --light: #FFFFFF;
+            --success: #57F287;
+            --danger: #ED4245;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 100vh;
+        }
+
+        .panel {
+            background: var(--dark);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #404EED33;
+        }
+
+        .editor-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-section {
+            margin-bottom: 20px;
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: var(--darker);
+            border: 1px solid #404EED66;
+            border-radius: 5px;
+            color: var(--light);
+        }
+
+        .code-editor {
+            flex: 1;
+            background: #1E1E1E;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            background: #2D2D2D;
+            padding: 10px;
+            border-bottom: 1px solid #404EED33;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: #1E1E1E;
+            color: #D4D4D4;
+            border: none;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--light);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--darker);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--light);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-console {
+            flex: 1;
+            background: #1E1E1E;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .log-success {
+            border-left-color: var(--success);
+            color: var(--success);
+        }
+
+        .log-error {
+            border-left-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .log-warning {
+            border-left-color: #FEE75C;
+            color: #FEE75C;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .status-online {
+            background: var(--success);
+        }
+
+        .status-offline {
+            background: var(--danger);
+        }
+
+        .bot-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: var(--darker);
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        h1, h2, h3 {
+            color: var(--light);
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #B9BBBE;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Panel de Editor -->
+        <div class="panel editor-panel">
+            <h1><i class="fab fa-discord"></i> Editor de Bot Discord</h1>
+            
+            <div class="config-section">
+                <h3>🔧 Configuración del Bot</h3>
+                <label>Token del Bot:</label>
+                <input type="password" id="botToken" class="config-input" placeholder="Inserte el token de su bot...">
+                
+                <label>Prefijo de Comandos:</label>
+                <input type="text" id="botPrefix" class="config-input" value="!" placeholder="Prefijo para comandos">
+                
+                <label>Estado del Bot:</label>
+                <input type="text" id="botStatus" class="config-input" value="¡Programado desde la web!" placeholder="Estado personalizado">
+            </div>
+
+            <div class="code-editor">
+                <div class="editor-header">
+                    <h3><i class="fas fa-code"></i> Código Python del Bot</h3>
+                </div>
+                <textarea id="pythonCode" spellcheck="false">
+import discord
+from discord.ext import commands
+import asyncio
+
+# Configuración inicial
+intents = discord.Intents.default()
+intents.message_content = True
+
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f'✅ Bot conectado como {bot.user.name}')
+    await bot.change_presence(activity=discord.Game(name="¡Programado desde la web!"))
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    
+    # Comando de prueba
+    if message.content.lower() == 'hola':
+        await message.channel.send('¡Hola! 🤖')
+    
+    await bot.process_commands(message)
+
+@bot.command()
+async def ping(ctx):
+    await ctx.send(f'🏓 Pong! Latencia: {round(bot.latency * 1000)}ms')
+
+@bot.command()
+async def info(ctx):
+    embed = discord.Embed(title="Información del Bot", color=0x5865F2)
+    embed.add_field(name="Servidores", value=len(bot.guilds), inline=True)
+    embed.add_field(name="Usuarios", value=len(bot.users), inline=True)
+    embed.add_field(name="Prefix", value=bot.command_prefix, inline=True)
+    await ctx.send(embed=embed)
+
+# Ejecutar el bot
+if __name__ == "__main__":
+    bot.run('TU_TOKEN_AQUI')
+                </textarea>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="saveConfig()">
+                    <i class="fas fa-save"></i> Guardar Config
+                </button>
+                <button class="btn btn-success" onclick="startBot()">
+                    <i class="fas fa-play"></i> Iniciar Bot
+                </button>
+                <button class="btn btn-danger" onclick="stopBot()">
+                    <i class="fas fa-stop"></i> Detener Bot
+                </button>
+                <button class="btn btn-primary" onclick="downloadCode()">
+                    <i class="fas fa-download"></i> Descargar Código
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel de Salida y Control -->
+        <div class="panel output-panel">
+            <h2><i class="fas fa-terminal"></i> Consola de Salida</h2>
+            
+            <div class="output-console" id="outputConsole">
+                <div class="log-entry">🔧 Editor de Bot Discord listo</div>
+                <div class="log-entry">💡 Inserte su token y configure el bot</div>
+                <div class="log-entry">🚀 Haga clic en 'Iniciar Bot' para comenzar</div>
+            </div>
+
+            <div class="bot-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="guildCount">0</div>
+                    <div>Servidores</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="userCount">0</div>
+                    <div>Usuarios</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="commandCount">0</div>
+                    <div>Comandos</div>
+                </div>
+                <div class="stat-card">
+                    <div id="statusIndicator" class="status-indicator status-offline"></div>
+                    <div>Estado</div>
+                </div>
+            </div>
+
+            <div class="config-section" style="margin-top: 20px;">
+                <h3>⚡ Comando Rápido</h3>
+                <input type="text" id="quickCommand" class="config-input" placeholder="Escriba un comando para ejecutar...">
+                <button class="btn btn-primary" onclick="executeCommand()" style="margin-top: 10px; width: 100%;">
+                    <i class="fas fa-bolt"></i> Ejecutar Comando
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let botRunning = false;
+        let commandCount = 0;
+
+        function logMessage(message, type = 'info') {
+            const console = document.getElementById('outputConsole');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `• ${new Date().toLocaleTimeString()} - ${message}`;
+            console.appendChild(logEntry);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function saveConfig() {
+            const token = document.getElementById('botToken').value;
+            const prefix = document.getElementById('botPrefix').value;
+            const status = document.getElementById('botStatus').value;
+            const code = document.getElementById('pythonCode').value;
+
+            if (!token) {
+                logMessage('❌ Por favor, inserte el token del bot', 'error');
+                return;
+            }
+
+            // Actualizar el código con la configuración
+            let updatedCode = code
+                .replace(/command_prefix=['"][^'"]*['"]/, `command_prefix='${prefix}'`)
+                .replace(/Game\(name="[^"]*"\)/, `Game(name="${status}")`)
+                .replace(/bot\.run\(['"][^'"]*['"]\)/, `bot.run('${token}')`);
+
+            document.getElementById('pythonCode').value = updatedCode;
+            
+            localStorage.setItem('botConfig', JSON.stringify({
+                token, prefix, status, code: updatedCode
+            }));
+
+            logMessage('✅ Configuración guardada correctamente', 'success');
+        }
+
+        function startBot() {
+            const token = document.getElementById('botToken').value;
+            
+            if (!token) {
+                logMessage('❌ Token requerido para iniciar el bot', 'error');
+                return;
+            }
+
+            if (botRunning) {
+                logMessage('⚠️ El bot ya está en ejecución', 'warning');
+                return;
+            }
+
+            logMessage('🚀 Iniciando bot de Discord...', 'info');
+            botRunning = true;
+            document.getElementById('statusIndicator').className = 'status-indicator status-online';
+            
+            // Simulación de inicio del bot
+            setTimeout(() => {
+                logMessage('✅ Bot conectado exitosamente', 'success');
+                updateStats(5, 150); // Simular estadísticas
+            }, 2000);
+        }
+
+        function stopBot() {
+            if (!botRunning) {
+                logMessage('⚠️ El bot no está en ejecución', 'warning');
+                return;
+            }
+
+            logMessage('🛑 Deteniendo bot...', 'info');
+            botRunning = false;
+            document.getElementById('statusIndicator').className = 'status-indicator status-offline';
+            updateStats(0, 0);
+            logMessage('✅ Bot detenido correctamente', 'success');
+        }
+
+        function updateStats(guilds, users) {
+            document.getElementById('guildCount').textContent = guilds;
+            document.getElementById('userCount').textContent = users;
+            document.getElementById('commandCount').textContent = commandCount;
+        }
+
+        function executeCommand() {
+            const command = document.getElementById('quickCommand').value;
+            if (!command) return;
+
+            commandCount++;
+            logMessage(`🤖 Ejecutando comando: ${command}`, 'info');
+            document.getElementById('quickCommand').value = '';
+            updateStats(5, 150); // Actualizar estadísticas
+        }
+
+        function downloadCode() {
+            const code = document.getElementById('pythonCode').value;
+            const blob = new Blob([code], { type: 'text/x-python' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'discord_bot.py';
+            a.click();
+            URL.revokeObjectURL(url);
+            logMessage('💾 Código descargado como discord_bot.py', 'success');
+        }
+
+        // Cargar configuración guardada
+        window.addEventListener('load', () => {
+            const savedConfig = localStorage.getItem('botConfig');
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                document.getElementById('botToken').value = config.token || '';
+                document.getElementById('botPrefix').value = config.prefix || '!';
+                document.getElementById('botStatus').value = config.status || '';
+                document.getElementById('pythonCode').value = config.code || '';
+                logMessage('📁 Configuración anterior cargada', 'info');
+            }
+        });
+    </script>
+</body>
+</html>
